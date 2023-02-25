@@ -1,0 +1,7 @@
+.terraform*
+.terraform/*
+.terraform/
+terraform*
+*.terraform*
+awscliv2
+awscliv2/*

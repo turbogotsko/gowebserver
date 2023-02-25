@@ -1,0 +1,47 @@
+---
+- name: deploy and cofig gowebserver
+  hosts: all
+  become: true
+  vars:
+    PORT: 7766 
+  tasks:
+    - name: enable epel repo
+      command:
+        cmd: "sudo amazon-linux-extras enable epel"
+    - name: install epel repo
+      yum:
+        name: epel-release
+        state: latest
+        update_cache: yes
+    - name: install nginx packages
+      yum:
+        name: [nginx]
+        state: latest
+        update_cache: yes
+    - name: put app in bin folder 
+      become: true
+      command:
+        cmd: aws s3 cp s3://go-web-server-test/gowebserver /usr/local/bin/
+    - name: change permissions  
+      become: true
+      command:
+        cmd: chmod 711 /usr/local/bin/gowebserver
+    - name: configure nginx
+      template:
+        src: ./data/gowebserver.j2
+        dest: /etc/nginx/conf.d/gowebserver.conf
+      notify: restart nginx
+    - name: run the app
+      tags: fail
+      command:
+        cmd: /usr/local/bin/gowebserver
+      async: 86400
+      poll: 0
+      environment:
+        PORT: "{{ PORT }}"
+  
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
